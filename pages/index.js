@@ -1,47 +1,27 @@
-// pages/index.js
-import { useState } from 'react';
-import { useRouter } from 'next/router';
+// pages/signin.js
 
-const Index = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+import React from 'react';
 
-  const router = useRouter();
-  const handleSubmit = async (e) => {
+const Signin = () => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
-
-    // Send the data to the server (to be implemented in Step 6)
-    console.log(`User Signed In: ${firstName} ${lastName}`);
-
-    router.push('/dashboard');
+    // Handle form submission logic (will be added later)
   };
 
   return (
     <div>
       <h1>Sign In</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          First Name:
-          <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-        </label>
-        <br />
-        <label>
-          Last Name:
-          <input
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-          />
-        </label>
-        <br />
+      <form onSubmit={handleFormSubmit}>
+        <label htmlFor="email">Email:</label>
+        <input type="email" id="email" name="email" required />
+
+        <label htmlFor="password">Password:</label>
+        <input type="password" id="password" name="password" required />
+
         <button type="submit">Sign In</button>
       </form>
     </div>
   );
 };
 
-export default Index;
+export default Signin;

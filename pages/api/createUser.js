@@ -1,6 +1,12 @@
 // pages/api/createUser.js
 import connectToDatabase from '../../utils/connectToDatabase';
 
+
+import connection from '../../db';
+
+
+
+
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { firstName, lastName } = req.body;
