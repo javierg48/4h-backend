@@ -1,49 +1,81 @@
 // pages/section/[slug].js
 
-import React from 'react';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
+import connectDB from '../../lib/db';
+import mongoose from 'mongoose';
 
-const Section = () => {
+const Section = ({ fields }) => {
   const router = useRouter();
   const { slug } = router.query;
+  const [formData, setFormData] = useState({});
 
-  // Placeholder for fetching data from MongoDB based on the slug (to be implemented)
-  const fetchDataFromMongoDB = async () => {
-    // Implement your logic to fetch data from MongoDB for the specified section
-    // For now, let's use a placeholder object
-    return {
-      title: `Section ${slug}`,
-      description: `This is Section ${slug}.`,
-      // Add more fields as needed based on MongoDB collection structure
-    };
+  const handleChange = (key, value) => {
+    setFormData({ ...formData, [key]: value });
   };
 
-  // Use React hooks to manage state
-  const [sectionData, setSectionData] = React.useState(null);
+  const handleCreate = async () => {
+    try {
+      // Connect to the MongoDB database
+      await connectDB();
 
-  // Fetch data when the component mounts
-  React.useEffect(() => {
-    const fetchData = async () => {
-      const data = await fetchDataFromMongoDB();
-      setSectionData(data);
-    };
+      // Access the specified collection using the slug parameter
+      const collection = mongoose.connection.collection(name); // Assuming 'name' is defined earlier
 
-    fetchData();
-  }, [slug]); // Run the effect whenever the slug changes
+      // Insert the formData into the collection
+      await collection.insertOne(formData);
 
-  // Display loading message while data is being fetched
-  if (!sectionData) {
-    return <p>Loading...</p>;
-  }
+      console.log('Data inserted successfully');
+    } catch (error) {
+      console.error('Error inserting data:', error);
+    }
+  };
 
-  // Render the dynamic content based on the fetched data
   return (
     <div>
-      <h1>{sectionData.title}</h1>
-      <p>{sectionData.description}</p>
-      {/* Render additional fields dynamically based on MongoDB collection */}
+      <h1>{`Section ${slug}`}</h1>
+      {fields.map((field) => (
+        <div key={field}>
+          <label>{field}</label>
+          <input
+            type="text"
+            onChange={(e) => handleChange(field, e.target.value)}
+          />
+        </div>
+      ))}
+      <button onClick={handleCreate}>Create</button>
     </div>
   );
 };
 
+export async function getServerSideProps(context) {
+  // Connect to the MongoDB database
+  await connectDB();
+
+  // Fetch fields based on the slug and pass it as props
+  const { slug } = context.params;
+
+  const components = ["1-involvementSummary", "2-projectSummary"];
+  const componentIndex = parseInt(slug) - 1;
+  console.log("===================================");
+  console.log(components[componentIndex]);
+  let name = components[componentIndex];
+
+  // Access the specified collection using the slug parameter
+  const collection = mongoose.connection.collection(name);
+  
+  // Retrieve a sample document from the collection
+  const sampleDocument = await collection.findOne();
+  
+  // Extract the field names from the sample document
+  let fields = Object.keys(sampleDocument);
+
+  return {
+    props: {
+      fields,
+    },
+  };
+}
+
 export default Section;
+// new V
