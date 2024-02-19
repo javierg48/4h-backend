@@ -11,7 +11,7 @@ const Section = ({ fields }) => {
   const [formData, setFormData] = useState({});
 
   const handleChange = (key, value) => {
-    setFormData({ ...formData, [key]: value });
+    setFormData((prevData) => ({ ...prevData, [key]: value }));
   };
 
   const handleCreate = async () => {
@@ -20,7 +20,7 @@ const Section = ({ fields }) => {
       await connectDB();
 
       // Access the specified collection using the slug parameter
-      const collection = mongoose.connection.collection(name); // Assuming 'name' is defined earlier
+      const collection = mongoose.connection.collection(name);
 
       // Insert the formData into the collection
       await collection.insertOne(formData);
@@ -37,10 +37,28 @@ const Section = ({ fields }) => {
       {fields.map((field) => (
         <div key={field}>
           <label>{field}</label>
-          <input
-            type="text"
-            onChange={(e) => handleChange(field, e.target.value)}
-          />
+          {Array.isArray(formData[field]) ? (
+            formData[field].map((item, index) => (
+              <div key={index}>
+                {Object.keys(item).map((subField) => (
+                  <div key={subField}>
+                    <label>{subField}</label>
+                    <input
+                      type="text"
+                      value={item[subField]}
+                      onChange={(e) => handleChange(subField, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ))
+          ) : (
+            <input
+              type="text"
+              value={formData[field]}
+              onChange={(e) => handleChange(field, e.target.value)}
+            />
+          )}
         </div>
       ))}
       <button onClick={handleCreate}>Create</button>
@@ -52,7 +70,7 @@ export async function getServerSideProps(context) {
   // Connect to the MongoDB database
   await connectDB();
 
-  // Fetch fields based on the slug and pass it as props
+  // Fetch fields based on the slug and pass them as props
   const { slug } = context.params;
 
   const components = ["1-involvementSummary", "2-projectSummary"];
@@ -63,12 +81,27 @@ export async function getServerSideProps(context) {
 
   // Access the specified collection using the slug parameter
   const collection = mongoose.connection.collection(name);
-  
+
   // Retrieve a sample document from the collection
   const sampleDocument = await collection.findOne();
-  
-  // Extract the field names from the sample document
-  let fields = Object.keys(sampleDocument);
+
+  // Extract all fields, including nested ones, using a recursive function
+  const extractFields = (obj, parentKey = '') => {
+    let fields = [];
+    for (const key in obj) {
+      const currentKey = parentKey ? `${parentKey}.${key}` : key;
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        // Recursively extract nested fields
+        fields = fields.concat(extractFields(obj[key], currentKey));
+      } else {
+        fields.push(currentKey);
+      }
+    }
+    return fields;
+  };
+
+  // Extract all fields from the sample document, including nested ones
+  const fields = extractFields(sampleDocument);
 
   return {
     props: {
@@ -78,4 +111,4 @@ export async function getServerSideProps(context) {
 }
 
 export default Section;
-// new V
+// new V AND WORKING RN
